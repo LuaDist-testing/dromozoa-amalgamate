@@ -1,3 +1,5 @@
+#! /usr/bin/env lua
+
 -- Copyright (C) 2015 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-amalgamate.
@@ -15,6 +17,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-amalgamate.  If not, see <http://www.gnu.org/licenses/>.
 
-local test4 = require "test4"
-assert(test4 == 4)
-return 3
+local module1 = require "test.module1"
+local module2 = require "test.module2"
+local module3 = require "test.module3"
+local module4 = require "test.module4"
+
+assert(module1 == 1)
+assert(module2 == 2)
+assert(module3 == 3)
+assert(module4 == 4)
+assert(arg[1] == nil)
+os.exit(0)

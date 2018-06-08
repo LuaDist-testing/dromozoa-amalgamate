@@ -17,13 +17,20 @@
 # You should have received a copy of the GNU General Public License
 # along with dromozoa-amalgamate.  If not, see <http://www.gnu.org/licenses/>.
 
-./test_driver.sh ./dromozoa-amalgamate
-./test_driver.sh lua dromozoa-amalgamate
+case x$1 in
+  x) lua=lua;;
+  *) lua=$1;;
+esac
+export lua
+
+./test/driver.sh "$lua"
 
 r='require "luarocks.loader"'
-p='print("#package.searchers", #package.searchers)'
-if lua -e "$r" >/dev/null 2>&1
+p='print(#(package.loaders or package.searchers))'
+if "$lua" -e "$r" >/dev/null 2>&1
 then
-  lua -e "$p" -e "$r" -e "$p"
-  ./test_driver.sh lua -e "$r" dromozoa-amalgamate
+  # "$lua" -e "$p" -e "$r" -e "$p"
+  ./test/driver.sh "$lua" -e "$r"
 fi
+
+rm -f test*.out

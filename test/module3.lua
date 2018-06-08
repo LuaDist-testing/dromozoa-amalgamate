@@ -15,8 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-amalgamate.  If not, see <http://www.gnu.org/licenses/>.
 
-local test3 = require "test3"
-local test4 = require "test4"
-assert(test3 == 3)
-assert(test4 == 4)
-return 2
+local module4 = require "test.module4"
+
+assert(module4 == 4)
+
+return 3

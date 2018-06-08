@@ -17,170 +17,29 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-amalgamate.  If not, see <http://www.gnu.org/licenses/>.
 
-assert(package.searchers)
-
-local format = string.format
-local unpack = table.unpack or unpack
-
-local output
-local module = {}
-local script
-
-local i = 1
-while i <= #arg do
-  local a, b = arg[i], arg[i + 1]
-  if a == "-o" then
-    output = b
-    i = i + 2
-  elseif a == "-r" then
-    module[#module+ 1] = b
-    i = i + 2
-  elseif a == "-s" then
-    script = b
-    i = i + 2
-  elseif a == "--" then
-    i = i + 1
-    break
-  else
-    error("bad argument #" .. i)
-  end
-end
-local index = i
-
-local backup ={
-  require = require;
-  package = { searchers = {} };
-  os = { exit = os.exit };
-  arg = {}
-}
-for k, v in pairs(package.searchers) do
-  backup.package.searchers[k] = v
-end
-for k, v in pairs(arg) do
-  backup.arg[k] = v
-end
-
-local stack = {
-  {
-    required = {};
-    loaded = {};
-  };
-}
-
-require = function (name)
-  local required = stack[#stack].required
-  required[#required + 1] = {
-    name = name;
-    required = {};
-    loaded = {};
-  }
-  stack[#stack + 1] = required[#required]
-  local result = backup.require(name)
-  stack[#stack] = nil;
-  return result
-end
-
-local function searcher_result(name, loader, ...)
-  if type(loader) == "function" then
-    local path = tostring(select(-1, ...))
-    if path:match("%.lua$") then
-      local loaded = stack[#stack].loaded
-      loaded[#loaded + 1] = {
-        name = name;
-        path = path;
-      }
-    end
-  end
-  return loader, ...
-end
-
-local function searcher(index)
-  return function (name, ...)
-    return searcher_result(name, backup.package.searchers[index](name, ...))
+local package_loaded = dromozoa_amalgamate_package_loaded
+if package_loaded == nil then
+  package_loaded = {}
+  for k, v in pairs(package.loaded) do
+    package_loaded[k] = v
   end
 end
 
-for k, v in pairs(package.searchers) do
-  package.searchers[k] = searcher(k)
+local amalgamate = require "dromozoa.amalgamate"
+
+for k, v in pairs(package.loaded) do
+  package.loaded[k] = package_loaded[k]
 end
 
-local exit_success = {}
-local exit_failure = "EXIT_FAILURE"
+local this = amalgamate()
+  :setup_arg()
+  :setup_searchers()
+  :setup_require()
+  :setup_exit()
+  :eval()
 
-os.exit = function (code)
-  if code == nil or code == 0 then
-    error(exit_success)
-  else
-    error(exit_failure)
-  end
-end
-
-for i = 1, #module do
-  local result, message = pcall(require, module[i])
-  if not result and message ~= exit_success then
-    error("could not evaluate module: " .. tostring(message))
-  end
-end
-if script ~= nil then
-  for k, v in pairs(arg) do
-    arg[k] = nil
-  end
-  arg[-1] = "lua"
-  arg[0] = script
-  for i = index, #backup.arg do
-    arg[i + 1 - index] = backup.arg[i]
-  end
-
-  local result, message = pcall(assert(loadfile(script)), unpack(arg))
-  if not result and message ~= exit_success then
-    error("could not evaluate module: " .. tostring(message))
-  end
-
-  for k, v in pairs(backup.arg) do
-    arg[k] = v
-  end
-end
-
-require = backup.require
-for k, v in pairs(backup.package.searchers) do
-  package.searchers[k] = v
-end
-os.exit = backup.os.exit
-
-local out
-if output == nil then
-  out = io.stdout
+if this.output == nil then
+  this:write(io.stdout)
 else
-  out = assert(io.open(output, "w"))
+  this:write(assert(io.open(this.output, "wb"))):close()
 end
-
-local function amalgamate(path)
-  local handle = assert(io.open(path))
-  out:write((handle:read("*a"):gsub("^#!.-\n", "")))
-  handle:close()
-end
-
-local function amalgamate_module(this)
-  local required = this.required
-  for i = 1, #required do
-    local v = required[i]
-    amalgamate_module(required[i])
-  end
-  local loaded = this.loaded
-  for i = 1, #loaded do
-    local v = loaded[i]
-    out:write(format("package.loaded[%q] = (function ()\n", v.name))
-    amalgamate(v.path)
-    out:write("end)()\n")
-  end
-end
-
-if script == nil then
-  amalgamate_module(stack[1])
-else
-  out:write("#! /usr/bin/env lua\n")
-  amalgamate_module(stack[1])
-  amalgamate(script)
-end
-
-out:close()

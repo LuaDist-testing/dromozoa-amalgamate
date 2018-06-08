@@ -17,20 +17,19 @@
 # You should have received a copy of the GNU General Public License
 # along with dromozoa-amalgamate.  If not, see <http://www.gnu.org/licenses/>.
 
-case x$TMPDIR in
-  x) TMPDIR=/tmp;;
-esac
-tmp=`(umask 077 && mktemp -d "$TMPDIR/dromozoa-XXXXXX" 2>/dev/null || :)`
-case x$tmp in
-  x) tmp=$TMPDIR/dromozoa-$$-$RANDOM; (umask 077 && mkdir "$tmp");;
-esac
-tmp=`(cd "$tmp" && pwd)`
-trap "(cd / && rm -f -r '$tmp')" 0
+"$@" dromozoa-amalgamate -o test1.out dromozoa-amalgamate
+env LUA_PATH= LUA_CPATH= "$lua" test1.out
+"$@" dromozoa-amalgamate -o test2.out test1.out
+diff -u test1.out test2.out
+"$@" test1.out -o test2.out dromozoa-amalgamate
+diff -u test1.out test2.out
+"$@" test1.out -o test2.out test1.out
+diff -u test1.out test2.out
 
-"$@" -s dromozoa-amalgamate >"$tmp/dromozoa-amalgamate"
-diff -u dromozoa-amalgamate "$tmp/dromozoa-amalgamate"
-
-"$@" -s test.lua >"$tmp/test1.lua"
-env LUA_PATH= LUA_CPATH= lua "$tmp/test1.lua"
-"$@" -s "$tmp/test1.lua" >"$tmp/test2.lua"
-diff -u "$tmp/test1.lua" "$tmp/test2.lua"
+for i in test/test*.lua
+do
+  "$@" dromozoa-amalgamate -o test1.out test/test.lua
+  env LUA_PATH= LUA_CPATH= "$lua" test1.out
+  "$@" dromozoa-amalgamate -o test2.out test1.out
+  diff -u test1.out test2.out
+done
