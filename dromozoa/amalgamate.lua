@@ -17,6 +17,7 @@
 
 local empty = require "dromozoa.commons.empty"
 local loadstring = require "dromozoa.commons.loadstring"
+local lua_version_num = require "dromozoa.commons.lua_version_num"
 local read_file = require "dromozoa.commons.read_file"
 local searchpath = require "dromozoa.commons.searchpath"
 local sequence = require "dromozoa.commons.sequence"
@@ -24,7 +25,7 @@ local sequence_writer = require "dromozoa.commons.sequence_writer"
 local unpack = require "dromozoa.commons.unpack"
 
 local searchers
-if _VERSION >= "Lua 5.2" then
+if lua_version_num >= 502 then
   searchers = package.searchers
 else
   searchers = package.loaders
