@@ -33,4 +33,6 @@ then
   ./test/driver.sh "$lua" -e "$r"
 fi
 
+"$lua" dromozoa-amalgamate -o /dev/null test/test_arg.lua a b c d
+
 rm -f test*.out

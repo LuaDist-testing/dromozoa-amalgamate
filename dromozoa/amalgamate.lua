@@ -146,7 +146,7 @@ function class:setup_arg()
     j = j + 1
     arg[j] = arg[i]
   end
-  for i = j, n do
+  for i = j + 1, n do
     arg[i] = nil
   end
 
